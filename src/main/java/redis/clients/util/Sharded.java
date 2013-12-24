@@ -10,7 +10,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Sharded<R, S extends ShardInfo<R>> {
+public class Sharded<R, S extends ShardInfo<R>> implements Sharding<R, S> {
 
     public static final int DEFAULT_WEIGHT = 1;
     private TreeMap<Long, S> nodes;
@@ -25,8 +25,6 @@ public class Sharded<R, S extends ShardInfo<R>> {
      */
     private Pattern tagPattern = null;
     // the tag is anything between {}
-    public static final Pattern DEFAULT_KEY_TAG_PATTERN = Pattern
-            .compile("\\{(.+?)\\}");
 
     public Sharded(List<S> shards) {
         this(shards, Hashing.MURMUR_HASH); // MD5 is really not good as we works
