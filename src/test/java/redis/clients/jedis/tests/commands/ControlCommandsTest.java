@@ -123,4 +123,14 @@ public class ControlCommandsTest extends JedisCommandTestBase {
 	Long replicas = jedis.waitReplicas(1, 100);
 	assertEquals(1, replicas.longValue());
     }
+    
+    @Test
+	public void debugBinaryKey() {
+		byte[] key = { 117, 3, -17 };
+		jedis.set(key, "bar".getBytes());
+		String resp = jedis.debug(DebugParams.OBJECT(key));
+		assertNotNull(resp);
+		resp = jedis.debug(DebugParams.RELOAD());
+		assertNotNull(resp);
+	}
 }
