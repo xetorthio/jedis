@@ -1,42 +1,36 @@
 package redis.clients.jedis;
 
+import redis.clients.jedis.Protocol.Command;
+import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.util.SafeEncoder;
+import redis.clients.util.SocketChannelReader;
+import redis.clients.util.SocketChannelWriter;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import redis.clients.jedis.Protocol.Command;
-import redis.clients.jedis.exceptions.JedisConnectionException;
-import redis.clients.jedis.exceptions.JedisDataException;
-import redis.clients.util.RedisInputStream;
-import redis.clients.util.RedisOutputStream;
-import redis.clients.util.SafeEncoder;
-
 public class Connection implements Closeable {
-
-  private String host = Protocol.DEFAULT_HOST;
+  private String host;
   private int port = Protocol.DEFAULT_PORT;
   private Socket socket;
-  private RedisOutputStream outputStream;
-  private RedisInputStream inputStream;
+  private SocketChannelReader channelReader;
+  private SocketChannelWriter channelWriter;
   private int connectionTimeout = Protocol.DEFAULT_TIMEOUT;
   private int soTimeout = Protocol.DEFAULT_TIMEOUT;
+  private SocketChannel socketChannel;
+
+  public SocketChannel getSocketChannel() {
+    return socketChannel;
+  }
+
   private boolean broken = false;
-
-  public Connection() {
-  }
-
-  public Connection(final String host) {
-    this.host = host;
-  }
-
-  public Connection(final String host, final int port) {
-    this.host = host;
-    this.port = port;
-  }
 
   public Socket getSocket() {
     return socket;
@@ -79,6 +73,19 @@ public class Connection implements Closeable {
     }
   }
 
+  public Connection(final String host) {
+    super();
+    this.host = host;
+  }
+
+  protected void flush() {
+    try {
+      channelWriter.flush();
+    } catch (IOException e) {
+      throw new JedisConnectionException(e);
+    }
+  }
+
   protected Connection sendCommand(final Command cmd, final String... args) {
     final byte[][] bargs = new byte[args.length][];
     for (int i = 0; i < args.length; i++) {
@@ -90,7 +97,7 @@ public class Connection implements Closeable {
   protected Connection sendCommand(final Command cmd, final byte[]... args) {
     try {
       connect();
-      Protocol.sendCommand(outputStream, cmd, args);
+      Protocol.sendCommand(channelWriter, cmd, args);
       return this;
     } catch (JedisConnectionException ex) {
       // Any other exceptions related to connection?
@@ -102,13 +109,19 @@ public class Connection implements Closeable {
   protected Connection sendCommand(final Command cmd) {
     try {
       connect();
-      Protocol.sendCommand(outputStream, cmd, new byte[0][]);
+      Protocol.sendCommand(channelWriter, cmd, new byte[0][]);
       return this;
     } catch (JedisConnectionException ex) {
       // Any other exceptions related to connection?
       broken = true;
       throw ex;
     }
+  }
+
+  public Connection(final String host, final int port) {
+    super();
+    this.host = host;
+    this.port = port;
   }
 
   public String getHost() {
@@ -127,10 +140,15 @@ public class Connection implements Closeable {
     this.port = port;
   }
 
+  public Connection() {
+
+  }
+
   public void connect() {
     if (!isConnected()) {
       try {
-        socket = new Socket();
+        socketChannel = SocketChannel.open();
+        socket = socketChannel.socket();
         // ->@wjw_add
         socket.setReuseAddress(true);
         socket.setKeepAlive(true); // Will monitor the TCP connection is
@@ -144,8 +162,9 @@ public class Connection implements Closeable {
 
         socket.connect(new InetSocketAddress(host, port), connectionTimeout);
         socket.setSoTimeout(soTimeout);
-        outputStream = new RedisOutputStream(socket.getOutputStream());
-        inputStream = new RedisInputStream(socket.getInputStream());
+        socketChannel.configureBlocking(true);
+        channelReader = new SocketChannelReader(socket.getChannel());
+        channelWriter = new SocketChannelWriter(socket.getChannel());
       } catch (IOException ex) {
         broken = true;
         throw new JedisConnectionException(ex);
@@ -161,9 +180,10 @@ public class Connection implements Closeable {
   public void disconnect() {
     if (isConnected()) {
       try {
-        inputStream.close();
+        if (socketChannel.isConnected()) {
+          socketChannel.close();
+        }
         if (!socket.isClosed()) {
-          outputStream.close();
           socket.close();
         }
       } catch (IOException ex) {
@@ -175,10 +195,10 @@ public class Connection implements Closeable {
 
   public boolean isConnected() {
     return socket != null && socket.isBound() && !socket.isClosed() && socket.isConnected()
-        && !socket.isInputShutdown() && !socket.isOutputShutdown();
+        && socketChannel.isConnected() && !socket.isInputShutdown() && !socket.isOutputShutdown();
   }
 
-  public String getStatusCodeReply() {
+  protected String getStatusCodeReply() {
     flush();
     final byte[] resp = (byte[]) readProtocolWithCheckingBroken();
     if (null == resp) {
@@ -242,27 +262,18 @@ public class Connection implements Closeable {
     return broken;
   }
 
-  protected void flush() {
-    try {
-      outputStream.flush();
-    } catch (IOException ex) {
-      broken = true;
-      throw new JedisConnectionException(ex);
-    }
-  }
-
   protected Object readProtocolWithCheckingBroken() {
     try {
-      return Protocol.read(inputStream);
+      return Protocol.read(channelReader);
     } catch (JedisConnectionException exc) {
       broken = true;
       throw exc;
     }
   }
 
-  public List<Object> getMany(final int count) {
+  public List<Object> getMany(int count) {
     flush();
-    final List<Object> responses = new ArrayList<Object>(count);
+    List<Object> responses = new ArrayList<Object>();
     for (int i = 0; i < count; i++) {
       try {
         responses.add(readProtocolWithCheckingBroken());

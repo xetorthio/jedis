@@ -11,6 +11,7 @@ import java.util.Set;
 
 import redis.clients.util.JedisByteHashMap;
 import redis.clients.util.SafeEncoder;
+import redis.clients.util.Slowlog;
 
 public class BuilderFactory {
   public static final Builder<Double> DOUBLE = new Builder<Double>() {
@@ -32,6 +33,26 @@ public class BuilderFactory {
       return "boolean";
     }
   };
+
+  public static final Builder<List<Boolean>> BOOLEAN_LIST = new Builder<List<Boolean>>() {
+    @SuppressWarnings("unchecked")
+    public List<Boolean> build(Object data) {
+      if (null == data) {
+        return null;
+      }
+      List<Long> l = (List<Long>) data;
+      final ArrayList<Boolean> result = new ArrayList<Boolean>(l.size());
+      for (final Long ldata : l) {
+        if (ldata == null) {
+          result.add(null);
+        } else {
+          result.add(ldata == 1);
+        }
+      }
+      return result;
+    }
+  };
+
   public static final Builder<byte[]> BYTE_ARRAY = new Builder<byte[]>() {
     public byte[] build(Object data) {
       return ((byte[]) data); // deleted == 1
@@ -273,6 +294,20 @@ public class BuilderFactory {
     }
   };
 
+  public static final Builder<List<Slowlog>> SLOWLOG_LIST = new Builder<List<Slowlog>>() {
+    @Override
+    public List<Slowlog> build(Object data) {
+      if (null == data) {
+        return null;
+      }
+      return Slowlog.from((List<Object>) data);
+    }
+
+    public String toString() {
+      return "List<Slowlog>";
+    }
+  };
+
   public static final Builder<Object> EVAL_RESULT = new Builder<Object>() {
 
     @Override
@@ -325,6 +360,30 @@ public class BuilderFactory {
       }
 
       return result;
+    }
+
+  };
+
+  public static final Builder<Object> EVAL_STRING = new Builder<Object>() {
+    @Override
+    public Object build(Object data) {
+      if (data instanceof byte[]) return SafeEncoder.encode((byte[]) data);
+
+      if (data instanceof List<?>) {
+        List<?> list = (List<?>) data;
+        List<Object> listResult = new ArrayList<Object>(list.size());
+        for (Object bin : list) {
+          listResult.add(build(bin));
+        }
+
+        return listResult;
+      }
+
+      return data;
+    }
+
+    public String toString() {
+      return "EVAL_STRING";
     }
 
   };
