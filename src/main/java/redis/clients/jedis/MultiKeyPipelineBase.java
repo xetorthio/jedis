@@ -10,7 +10,7 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
     MultiKeyBinaryRedisPipeline, MultiKeyCommandsPipeline, ClusterPipeline,
     BinaryScriptingCommandsPipeline, ScriptingCommandsPipeline, BasicRedisPipeline {
 
-  protected Client client = null;
+  protected Client client;
 
   @Override
   public Response<List<String>> brpop(String... args) {

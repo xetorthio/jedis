@@ -16,7 +16,7 @@ import redis.clients.util.Hashing;
 
 public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, Closeable {
 
-  protected ShardedJedisPool dataSource = null;
+  protected ShardedJedisPool dataSource;
 
   public ShardedJedis(List<JedisShardInfo> shards) {
     super(shards);
