@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
@@ -249,7 +250,8 @@ public class JedisSentinelPool extends JedisPoolAbstract {
     protected int port;
     protected long subscribeRetryWaitTimeMillis = 5000;
     protected volatile Jedis j;
-    protected AtomicBoolean running = new AtomicBoolean(false);
+    protected AtomicBoolean isShutdown = new AtomicBoolean(false);
+    protected final ReentrantLock lock = new ReentrantLock();
 
     protected MasterListener() {
     }
@@ -270,18 +272,12 @@ public class JedisSentinelPool extends JedisPoolAbstract {
     @Override
     public void run() {
 
-      running.set(true);
-
-      while (running.get()) {
+      while (lock.tryLock() && !isShutdown.get()) {
 
         j = new Jedis(host, port);
 
         try {
-          // double check that it is not being shutdown
-          if (!running.get()) {
-            break;
-          }
-          
+
           /*
            * Added code for active refresh
            */
@@ -293,6 +289,12 @@ public class JedisSentinelPool extends JedisPoolAbstract {
           }
 
           j.subscribe(new JedisPubSub() {
+            @Override
+            public void proceed(Client client, String... channels) {
+              lock.unlock();
+              super.proceed(client, channels);
+            }
+
             @Override
             public void onMessage(String channel, String message) {
               log.debug("Sentinel {}:{} published: {}.", host, port, message);
@@ -319,7 +321,12 @@ public class JedisSentinelPool extends JedisPoolAbstract {
 
         } catch (JedisException e) {
 
-          if (running.get()) {
+          try {
+            lock.unlock();
+          }catch (IllegalMonitorStateException ex){
+            log.debug("lock is not held by MasterListener");
+          }
+          if (!isShutdown.get()) {
             log.error("Lost connection to Sentinel at {}:{}. Sleeping 5000ms and retrying.", host,
               port, e);
             try {
@@ -332,6 +339,11 @@ public class JedisSentinelPool extends JedisPoolAbstract {
           }
         } finally {
           j.close();
+          try {
+            lock.unlock();
+          }catch (IllegalMonitorStateException ex){
+            log.debug("lock is not held by MasterListener");
+          }
         }
       }
     }
@@ -339,13 +351,16 @@ public class JedisSentinelPool extends JedisPoolAbstract {
     public void shutdown() {
       try {
         log.debug("Shutting down listener on {}:{}", host, port);
-        running.set(false);
+        lock.lock();
+        isShutdown.set(true);
         // This isn't good, the Jedis object is not thread safe
         if (j != null) {
           j.disconnect();
         }
       } catch (Exception e) {
         log.error("Caught exception while shutting down: ", e);
+      } finally {
+        lock.unlock();
       }
     }
   }
