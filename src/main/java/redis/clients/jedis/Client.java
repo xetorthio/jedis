@@ -1323,4 +1323,8 @@ public class Client extends BinaryClient implements Commands {
 
   }
  
+  public String toString() {
+    return getHost() + ":" + getPort();
+  }
+
 }
