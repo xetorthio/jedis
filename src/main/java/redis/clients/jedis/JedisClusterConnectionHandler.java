@@ -73,7 +73,9 @@ public abstract class JedisClusterConnectionHandler implements Closeable {
           jedis.clientSetname(clientName);
         }
         cache.discoverClusterNodesAndSlots(jedis);
-        break;
+        if (cache.getSlotSize() == BinaryJedisCluster.HASHSLOTS) {
+          break;
+        }
       } catch (JedisConnectionException e) {
         // try next nodes
       } finally {
