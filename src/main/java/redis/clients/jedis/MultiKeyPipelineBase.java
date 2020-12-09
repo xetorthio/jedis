@@ -5,6 +5,7 @@ import redis.clients.jedis.params.GeoRadiusParam;
 import redis.clients.jedis.params.GeoRadiusStoreParam;
 import redis.clients.jedis.params.MigrateParams;
 
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,7 +114,9 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
 
   @Override
   public Response<Set<byte[]>> keys(byte[] pattern) {
+    // FIXME: should be fixed after debugging
     getClient(pattern).keys(pattern);
+    //getClient(pattern).keys("hello");
     return getResponse(BuilderFactory.BYTE_ARRAY_ZSET);
   }
 
@@ -437,7 +440,7 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
 
   @Override
   public Response<byte[]> randomKeyBinary() {
-    client.randomKey();
+    client.randomKeyBinary();
     return getResponse(BuilderFactory.BYTE_ARRAY);
   }
 
@@ -565,13 +568,14 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
 
   @Override
   public Response<Object> eval(String script) {
-    return this.eval(script, 0, new String[0]);
+    getClient(script).eval(script);
+    return getResponse(BuilderFactory.EVAL_RESULT);
   }
 
   @Override
   public Response<Object> eval(String script, List<String> keys, List<String> args) {
-    String[] argv = Jedis.getParams(keys, args);
-    return this.eval(script, keys.size(), argv);
+    getClient(script).eval(script, keys, args);
+    return getResponse(BuilderFactory.EVAL_RESULT);
   }
 
   @Override
@@ -582,13 +586,14 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
 
   @Override
   public Response<Object> evalsha(String sha1) {
-    return this.evalsha(sha1, 0, new String[0]);
+    getClient(sha1).evalsha(sha1);
+    return getResponse(BuilderFactory.EVAL_RESULT);
   }
 
   @Override
   public Response<Object> evalsha(String sha1, List<String> keys, List<String> args) {
-    String[] argv = Jedis.getParams(keys, args);
-    return this.evalsha(sha1, keys.size(), argv);
+    getClient(sha1).evalsha(sha1, keys, args);
+    return getResponse(BuilderFactory.EVAL_RESULT);
   }
 
   @Override
@@ -599,7 +604,8 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
 
   @Override
   public Response<Object> eval(byte[] script) {
-    return this.eval(script, 0);
+    getClient(script).eval(script);
+    return getResponse(BuilderFactory.EVAL_BINARY_RESULT);
   }
 
   @Override
@@ -610,8 +616,8 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
 
   @Override
   public Response<Object> eval(byte[] script, List<byte[]> keys, List<byte[]> args) {
-    byte[][] argv = BinaryJedis.getParamsWithBinary(keys, args);
-    return this.eval(script, keys.size(), argv);
+    getClient(script).eval(script, keys, args);
+    return getResponse(BuilderFactory.EVAL_BINARY_RESULT);
   }
 
   @Override
@@ -622,13 +628,14 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
 
   @Override
   public Response<Object> evalsha(byte[] sha1) {
-    return this.evalsha(sha1, 0);
+    getClient(sha1).evalsha(sha1);
+    return getResponse(BuilderFactory.EVAL_BINARY_RESULT);
   }
 
   @Override
   public Response<Object> evalsha(byte[] sha1, List<byte[]> keys, List<byte[]> args) {
-    byte[][] argv = BinaryJedis.getParamsWithBinary(keys, args);
-    return this.evalsha(sha1, keys.size(), argv);
+    getClient(sha1).evalsha(sha1, keys, args);
+    return getResponse(BuilderFactory.EVAL_BINARY_RESULT);
   }
 
   @Override
