@@ -247,4 +247,18 @@ public class JedisTest extends JedisCommandTestBase {
     assertFalse(jedis.isConnected());
   }
 
+  @Test
+  public void stralgo() throws Exception {
+    String info = jedis.info("server");
+    for(String line : info.split("\n")) {
+      if(line.startsWith("redis_version:")) {
+        if(line.charAt(14) == '6') {
+          String res = SafeEncoder.encode((byte[])jedis.stralgo("LCS", "STRINGS", "ohmytext", "mynewtext"));
+          assertEquals(res, "mytext");
+          break;
+        }
+      }
+    }
+    assert true;
+  }
 }

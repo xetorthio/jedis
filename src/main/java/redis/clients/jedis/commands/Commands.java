@@ -575,4 +575,5 @@ public interface Commands {
   void xinfoGroup (String key);
 
   void xinfoConsumers (String key, String group);
+  void stralgo(String algorithm,String... params);
 }

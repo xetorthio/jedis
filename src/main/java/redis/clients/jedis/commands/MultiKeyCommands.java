@@ -257,4 +257,12 @@ public interface MultiKeyCommands {
 
   long georadiusByMemberStore(String key, String member, double radius, GeoUnit unit,
       GeoRadiusParam param, GeoRadiusStoreParam storeParam);
+  /**
+   * STRALGO LCS [KEYS ...] [STRINGS ...] [LEN] [IDX] [MINMATCHLEN <len>] [WITHMATCHLEN]
+   * 
+   * @param algorithm
+   * @param params
+   * @return
+   */
+  Object stralgo(String algorithm, String... params);
 }
