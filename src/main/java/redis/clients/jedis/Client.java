@@ -1394,5 +1394,9 @@ public class Client extends BinaryClient implements Commands {
     xinfoConsumers(SafeEncoder.encode(key),SafeEncoder.encode(group));
 
   }
- 
+
+  @Override
+  public void stralgo(final String algorithm, final String... params) {
+    stralgo(SafeEncoder.encode(algorithm),SafeEncoder.encodeMany(params));
+  }
 }
