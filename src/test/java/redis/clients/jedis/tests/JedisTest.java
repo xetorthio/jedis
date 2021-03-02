@@ -203,4 +203,22 @@ public class JedisTest extends JedisCommandTestBase {
     assertFalse(jedis.isConnected());
   }
 
+  @Test
+  public void shouldNotOperateClosedConnectionHavingPassword() {
+    Jedis jedis = new Jedis("localhost");
+    jedis.auth("foobared");
+    assertEquals("PONG", jedis.ping());
+    jedis.close();
+
+    try {
+      jedis.ping();
+      fail("After closing Jedis, operation without authentication should fail");
+    } catch(JedisDataException jce) {
+      assertTrue(jce.getMessage().startsWith("NOAUTH"));
+    }
+
+    jedis.auth("foobared");
+    assertEquals("PONG", jedis.ping());
+    jedis.close();
+  }
 }
