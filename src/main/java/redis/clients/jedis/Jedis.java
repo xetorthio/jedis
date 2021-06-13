@@ -2390,7 +2390,7 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   @Override
-  public Long zcount(String key, Endpoint<Double> min, Endpoint<Double> max) {
+  public Long zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max) {
     checkIsInMultiOrPipeline();
     client.zcount(key, min, max);
     return client.getIntegerReply();
@@ -4330,8 +4330,10 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   @Override
-  public List<StreamEntry> xrange(String key, Endpoint<redis.clients.jedis.args.StreamEntryID> min,
-      Endpoint<redis.clients.jedis.args.StreamEntryID> max, Integer count, boolean rev) {
+  public List<StreamEntry> xrange(final String key,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max,
+      final Integer count, final boolean rev) {
     checkIsInMultiOrPipeline();
     client.xrange(key, min, max, count, rev);
     return BuilderFactory.STREAM_ENTRY_LIST.build(client.getObjectMultiBulkReply());

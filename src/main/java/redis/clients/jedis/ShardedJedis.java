@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import redis.clients.jedis.args.Endpoint;
 import redis.clients.jedis.commands.JedisCommands;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.params.GeoAddParams;
@@ -25,6 +24,7 @@ import redis.clients.jedis.params.ZIncrByParams;
 import redis.clients.jedis.params.LPosParams;
 import redis.clients.jedis.resps.KeyedListElement;
 import redis.clients.jedis.util.Hashing;
+import redis.clients.jedis.args.RangeEndpoint;
 
 public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, Closeable {
 
@@ -741,7 +741,7 @@ public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, C
   }
 
   @Override
-  public Long zcount(String key, Endpoint<Double> min, Endpoint<Double> max) {
+  public Long zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max) {
     Jedis j = getShard(key);
     return j.zcount(key, min, max);
   }
@@ -1230,8 +1230,10 @@ public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, C
   }
 
   @Override
-  public List<StreamEntry> xrange(String key, Endpoint<redis.clients.jedis.args.StreamEntryID> min,
-      Endpoint<redis.clients.jedis.args.StreamEntryID> max, Integer count, boolean rev) {
+  public List<StreamEntry> xrange(final String key,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max,
+      final Integer count, final boolean rev) {
     Jedis j = getShard(key);
     return j.xrange(key, min, max, count, rev);
   }
