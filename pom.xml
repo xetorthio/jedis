@@ -170,6 +170,7 @@
 				<configuration>
 					<aggregate>true</aggregate>
 					<additionalparam>-Xdoclint:none</additionalparam>
+					<detectJavaApiLink>false</detectJavaApiLink>
 				</configuration>
 				<executions>
 					<execution>
