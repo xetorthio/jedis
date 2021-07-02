@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.exceptions.JedisAskDataException;
-import redis.clients.jedis.exceptions.JedisClusterMaxAttemptsException;
 import redis.clients.jedis.exceptions.JedisClusterOperationException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisMovedDataException;
@@ -150,8 +149,7 @@ public abstract class JedisClusterCommand<T> {
       }
     }
 
-    JedisClusterMaxAttemptsException maxAttemptsException
-        = new JedisClusterMaxAttemptsException("No more cluster attempts left.");
+    JedisClusterOperationException maxAttemptsException = new JedisClusterOperationException("No more cluster attempts left.");
     maxAttemptsException.addSuppressed(lastException);
     throw maxAttemptsException;
   }
