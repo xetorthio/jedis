@@ -9,8 +9,12 @@ import java.util.List;
 
 import org.junit.Test;
 
+import redis.clients.jedis.StringMatchResult;
+import redis.clients.jedis.StringMatchResult.MatchedPosition;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.params.GetExParams;
+import redis.clients.jedis.params.StrAlgoParams;
+import redis.clients.jedis.params.StrAlgoParams.StrAlgo;
 
 public class StringValuesCommandsTest extends JedisCommandTestBase {
   @Test
@@ -235,4 +239,74 @@ public class StringValuesCommandsTest extends JedisCommandTestBase {
     long ttl = jedis.ttl("foo");
     assertTrue(ttl > 0 && ttl <= 20000);
   }
+
+  @Test
+  public void strAlgoLcsWithLen() {
+    StringMatchResult stringMatchResult = jedis.strAlgoLcs(StrAlgo.LCS,
+        StrAlgoParams.StrAlgoParams().strings("ohmytext", "mynewtext").len());
+    assertEquals(stringMatchResult.getLen(), 6);
+  }
+
+  @Test
+  public void strAlgoLcs() {
+    StringMatchResult stringMatchResult = jedis.strAlgoLcs(StrAlgo.LCS,
+        StrAlgoParams.StrAlgoParams().strings("ohmytext", "mynewtext"));
+    assertEquals(stringMatchResult.getMatchString(), "mytext");
+  }
+
+  @Test
+  public void strAlgoLcsWithIdx() {
+    StringMatchResult stringMatchResult = jedis.strAlgoLcs(StrAlgo.LCS,
+        StrAlgoParams.StrAlgoParams().strings("ohmytext", "mynewtext").idx().withMatchLen());
+    assertEquals(stringMatchResult.getLen(), 6);
+    assertEquals(2, stringMatchResult.getMatches().size());
+
+    MatchedPosition position0 = stringMatchResult.getMatches().get(0);
+    assertEquals(position0.getA().getStart(), 4);
+    assertEquals(position0.getA().getEnd(), 7);
+    assertEquals(position0.getB().getStart(), 5);
+    assertEquals(position0.getB().getEnd(), 8);
+    assertEquals(position0.getMatchLen(), 4);
+
+    MatchedPosition position1 = stringMatchResult.getMatches().get(1);
+    assertEquals(position1.getA().getStart(), 2);
+    assertEquals(position1.getA().getEnd(), 3);
+    assertEquals(position1.getB().getStart(), 0);
+    assertEquals(position1.getB().getEnd(), 1);
+    assertEquals(position1.getMatchLen(), 2);
+  }
+
+  @Test
+  public void strAlgoLcsWithKey() {
+    jedis.mset("key1", "ohmytext", "key2", "mynewtext");
+
+    StringMatchResult stringMatchResult = jedis.strAlgoLcs(StrAlgo.LCS,
+        StrAlgoParams.StrAlgoParams().keys("key1", "key2"));
+    assertEquals(stringMatchResult.getMatchString(), "mytext");
+  }
+
+  @Test
+  public void strAlgoLcsWithKeyAndIdx() {
+    jedis.mset("key1", "ohmytext", "key2", "mynewtext");
+
+    StringMatchResult stringMatchResult = jedis.strAlgoLcs(StrAlgo.LCS,
+        StrAlgoParams.StrAlgoParams().keys("key1", "key2").idx().withMatchLen());
+    assertEquals(stringMatchResult.getLen(), 6);
+    assertEquals(2, stringMatchResult.getMatches().size());
+
+    MatchedPosition position0 = stringMatchResult.getMatches().get(0);
+    assertEquals(position0.getA().getStart(), 4);
+    assertEquals(position0.getA().getEnd(), 7);
+    assertEquals(position0.getB().getStart(), 5);
+    assertEquals(position0.getB().getEnd(), 8);
+    assertEquals(position0.getMatchLen(), 4);
+
+    MatchedPosition position1 = stringMatchResult.getMatches().get(1);
+    assertEquals(position1.getA().getStart(), 2);
+    assertEquals(position1.getA().getEnd(), 3);
+    assertEquals(position1.getB().getStart(), 0);
+    assertEquals(position1.getB().getEnd(), 1);
+    assertEquals(position1.getMatchLen(), 2);
+  }
+
 }

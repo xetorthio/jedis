@@ -23,9 +23,12 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.StringMatchResult;
 import redis.clients.jedis.exceptions.InvalidURIException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.params.StrAlgoParams;
+import redis.clients.jedis.params.StrAlgoParams.StrAlgo;
 import redis.clients.jedis.tests.commands.JedisCommandTestBase;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -247,18 +250,4 @@ public class JedisTest extends JedisCommandTestBase {
     assertFalse(jedis.isConnected());
   }
 
-  @Test
-  public void stralgo() throws Exception {
-    String info = jedis.info("server");
-    for(String line : info.split("\n")) {
-      if(line.startsWith("redis_version:")) {
-        if(line.charAt(14) == '6') {
-          String res = SafeEncoder.encode((byte[])jedis.stralgo("LCS", "STRINGS", "ohmytext", "mynewtext"));
-          assertEquals(res, "mytext");
-          break;
-        }
-      }
-    }
-    assert true;
-  }
 }

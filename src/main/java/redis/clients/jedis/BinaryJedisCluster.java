@@ -6,6 +6,7 @@ import redis.clients.jedis.commands.JedisClusterBinaryScriptingCommands;
 import redis.clients.jedis.commands.MultiKeyBinaryJedisClusterCommands;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.params.*;
+import redis.clients.jedis.params.StrAlgoParams.StrAlgo;
 import redis.clients.jedis.util.JedisClusterHashTagUtil;
 import redis.clients.jedis.util.KeyMergeUtil;
 import redis.clients.jedis.util.SafeEncoder;
@@ -925,6 +926,27 @@ public class BinaryJedisCluster implements BinaryJedisClusterCommands,
         return connection.strlen(key);
       }
     }.runBinary(key);
+  }
+
+  @Override
+  public StringMatchResult strAlgoLcs(StrAlgo algorithm, StrAlgoParams params) {
+    byte[][] keys = params.getByteKeys();
+
+    if (keys == null) {
+      return new JedisClusterCommand<StringMatchResult>(connectionHandler, maxAttempts, maxTotalRetriesDuration) {
+        @Override
+        public StringMatchResult execute(Jedis connection) {
+          return connection.strAlgoLcs(algorithm, params);
+        }
+      }.runWithAnyNode();
+    }
+
+    return new JedisClusterCommand<StringMatchResult>(connectionHandler, maxAttempts, maxTotalRetriesDuration) {
+      @Override
+      public StringMatchResult execute(Jedis connection) {
+        return connection.strAlgoLcs(algorithm, params);
+      }
+    }.runBinary(keys.length, keys);
   }
 
   @Override
