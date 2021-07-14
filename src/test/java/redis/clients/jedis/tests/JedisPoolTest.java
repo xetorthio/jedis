@@ -15,6 +15,7 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.Test;
 
+import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisFactory;
@@ -39,6 +40,19 @@ public class JedisPoolTest {
     }
     pool.close();
     assertTrue(pool.isClosed());
+  }
+
+  @Test
+  public void checkResourceWithConfig() {
+    try (JedisPool pool = new JedisPool(HostAndPortUtil.getRedisServers().get(7),
+        DefaultJedisClientConfig.builder().socketTimeoutMillis(5000).build())) {
+
+      try (Jedis jedis = pool.getResource()) {
+        assertEquals("PONG", jedis.ping());
+        assertEquals(5000, jedis.getClient().getSoTimeout());
+        jedis.close();
+      }
+    }
   }
 
   @Test
@@ -292,7 +306,7 @@ public class JedisPoolTest {
   }
 
   @Test
-  public void getNumActiveIsNegativeWhenPoolIsClosed() {
+  public void getNumActiveWhenPoolIsClosed() {
     JedisPool pool = new JedisPool(new JedisPoolConfig(), hnp.getHost(), hnp.getPort(), 2000,
         "foobared", 0, "my_shiny_client_name");
 
@@ -301,7 +315,7 @@ public class JedisPoolTest {
     }
 
     pool.close();
-    assertTrue(pool.getNumActive() < 0);
+    assertEquals(0, pool.getNumActive());
   }
 
   @Test
