@@ -3470,19 +3470,18 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
    * is switched off without the lost of any data. This is not guaranteed if the client uses simply
    * {@link #save() SAVE} and then {@link #quit() QUIT} because other clients may alter the DB data
    * between the two commands.
-   * @return Status code reply on error. On success nothing is returned since the server quits and
-   *         the connection is closed.
+   * @throws JedisException with the status code reply on error. On success nothing is thrown since
+   *         the server quits and the connection is closed.
    */
   @Override
-  public String shutdown() {
+  public void shutdown() throws JedisException {
     client.shutdown();
-    String status;
     try {
-      status = client.getStatusCodeReply();
-    } catch (JedisException ex) {
-      status = null;
+      String status = client.getStatusCodeReply();
+      throw new JedisException(status);
+    } catch (JedisConnectionException ex) {
+      // expected
     }
-    return status;
   }
 
   @Override
