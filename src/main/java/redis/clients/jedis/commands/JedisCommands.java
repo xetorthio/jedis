@@ -34,6 +34,7 @@ import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.params.ZIncrByParams;
 import redis.clients.jedis.params.LPosParams;
 import redis.clients.jedis.resps.KeyedListElement;
+import redis.clients.jedis.args.RangeEndpoint;
 
 /**
  * Common interface for sharded and non-sharded Jedis
@@ -291,6 +292,8 @@ public interface JedisCommands {
 
   long zcount(String key, String min, String max);
 
+  Long zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max);
+
   Set<String> zrangeByScore(String key, double min, double max);
 
   Set<String> zrangeByScore(String key, String min, String max);
@@ -478,6 +481,7 @@ public interface JedisCommands {
    * @return
    */
   StreamEntryID xadd(String key, Map<String, String> hash, XAddParams params);
+  redis.clients.jedis.args.StreamEntryID xaddV2(String key, Map<String, String> hash, XAddParams params);
 
   /**
    * XLEN key
@@ -528,6 +532,9 @@ public interface JedisCommands {
    * @return the entries with IDs matching the specified range, from the higher ID to the lower ID matching.
    */
   List<StreamEntry> xrevrange(String key, StreamEntryID end, StreamEntryID start, int count);
+
+  List<StreamEntry> xrange(String key, RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max, Integer count, boolean rev);
 
   /**
    * XACK key group ID [ID ...]

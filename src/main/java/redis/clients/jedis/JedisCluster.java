@@ -1,6 +1,5 @@
 package redis.clients.jedis;
 
-import redis.clients.jedis.args.*;
 import redis.clients.jedis.commands.JedisClusterCommands;
 import redis.clients.jedis.commands.JedisClusterScriptingCommands;
 import redis.clients.jedis.commands.MultiKeyJedisClusterCommands;
@@ -18,6 +17,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import redis.clients.jedis.args.ListDirection;
+import redis.clients.jedis.args.RangeEndpoint;
 
 public class JedisCluster extends BinaryJedisCluster implements JedisClusterCommands,
     MultiKeyJedisClusterCommands, JedisClusterScriptingCommands {
@@ -1279,6 +1280,16 @@ public class JedisCluster extends BinaryJedisCluster implements JedisClusterComm
 
   @Override
   public long zcount(final String key, final String min, final String max) {
+    return new JedisClusterCommand<Long>(connectionHandler, maxAttempts, maxTotalRetriesDuration) {
+      @Override
+      public Long execute(Jedis connection) {
+        return connection.zcount(key, min, max);
+      }
+    }.run(key);
+  }
+
+  @Override
+  public Long zcount(final String key, final RangeEndpoint<Double> min, final RangeEndpoint<Double> max) {
     return new JedisClusterCommand<Long>(connectionHandler, maxAttempts, maxTotalRetriesDuration) {
       @Override
       public Long execute(Jedis connection) {
@@ -2604,6 +2615,16 @@ public class JedisCluster extends BinaryJedisCluster implements JedisClusterComm
   }
 
   @Override
+  public redis.clients.jedis.args.StreamEntryID xaddV2(final String key, final Map<String, String> hash, final XAddParams params) {
+    return new JedisClusterCommand<redis.clients.jedis.args.StreamEntryID>(connectionHandler, maxAttempts, maxTotalRetriesDuration) {
+      @Override
+      public redis.clients.jedis.args.StreamEntryID execute(Jedis connection) {
+        return connection.xaddV2(key, hash, params);
+      }
+    }.run(key);
+  }
+
+  @Override
   public long xlen(final String key) {
     return new JedisClusterCommand<Long>(connectionHandler, maxAttempts, maxTotalRetriesDuration) {
       @Override
@@ -2653,6 +2674,19 @@ public class JedisCluster extends BinaryJedisCluster implements JedisClusterComm
       @Override
       public List<StreamEntry> execute(Jedis connection) {
         return connection.xrevrange(key, end, start, count);
+      }
+    }.run(key);
+  }
+
+  @Override
+  public List<StreamEntry> xrange(final String key,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max,
+      final Integer count, final boolean rev) {
+    return new JedisClusterCommand<List<StreamEntry>>(connectionHandler, maxAttempts, maxTotalRetriesDuration) {
+      @Override
+      public List<StreamEntry> execute(Jedis connection) {
+        return connection.xrange(key, min, max, count, rev);
       }
     }.run(key);
   }

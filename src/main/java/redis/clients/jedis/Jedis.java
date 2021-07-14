@@ -12,8 +12,10 @@ import java.util.Set;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
+import redis.clients.jedis.args.ListDirection;
+import redis.clients.jedis.args.RangeEndpoint;
+import redis.clients.jedis.args.UnblockType;
 
-import redis.clients.jedis.args.*;
 import redis.clients.jedis.commands.*;
 import redis.clients.jedis.params.*;
 import redis.clients.jedis.resps.*;
@@ -2389,6 +2391,13 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     return client.getIntegerReply();
   }
 
+  @Override
+  public Long zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max) {
+    checkIsInMultiOrPipeline();
+    client.zcount(key, min, max);
+    return client.getIntegerReply();
+  }
+
   /**
    * Return the all the elements in the sorted set at key with a score between min and max
    * (including elements with score equal to min or max).
@@ -4269,6 +4278,13 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
   }
 
   @Override
+  public redis.clients.jedis.args.StreamEntryID xaddV2(final String key, final Map<String, String> hash, final XAddParams params) {
+    checkIsInMultiOrPipeline();
+    client.xadd(key, hash, params);
+    return BuilderFactory.STREAM_ENTRY_ID_V2.build(client.getBinaryBulkReply());
+  }
+
+  @Override
   public long xlen(final String key) {
     checkIsInMultiOrPipeline();
     client.xlen(key);
@@ -4309,6 +4325,16 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
       final StreamEntryID start, final int count) {
     checkIsInMultiOrPipeline();
     client.xrevrange(key, end, start, count);
+    return BuilderFactory.STREAM_ENTRY_LIST.build(client.getObjectMultiBulkReply());
+  }
+
+  @Override
+  public List<StreamEntry> xrange(final String key,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max,
+      final Integer count, final boolean rev) {
+    checkIsInMultiOrPipeline();
+    client.xrange(key, min, max, count, rev);
     return BuilderFactory.STREAM_ENTRY_LIST.build(client.getObjectMultiBulkReply());
   }
 

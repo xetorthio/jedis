@@ -24,6 +24,7 @@ import redis.clients.jedis.params.ZIncrByParams;
 import redis.clients.jedis.params.LPosParams;
 import redis.clients.jedis.resps.KeyedListElement;
 import redis.clients.jedis.util.Hashing;
+import redis.clients.jedis.args.RangeEndpoint;
 
 public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, Closeable {
 
@@ -739,6 +740,12 @@ public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, C
   }
 
   @Override
+  public Long zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max) {
+    Jedis j = getShard(key);
+    return j.zcount(key, min, max);
+  }
+
+  @Override
   public Set<String> zrangeByScore(final String key, final double min, final double max) {
     Jedis j = getShard(key);
     return j.zrangeByScore(key, min, max);
@@ -1144,6 +1151,12 @@ public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, C
   }
 
   @Override
+  public redis.clients.jedis.args.StreamEntryID xaddV2(final String key, final Map<String, String> hash, final XAddParams params) {
+    Jedis j = getShard(key);
+    return j.xaddV2(key, hash, params);
+  }
+
+  @Override
   public long xlen(String key) {
     Jedis j = getShard(key);
     return j.xlen(key);
@@ -1219,6 +1232,15 @@ public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, C
   public List<StreamEntry> xrevrange(String key, StreamEntryID end, StreamEntryID start, int count) {
     Jedis j = getShard(key);
     return j.xrevrange(key, end, start, count);
+  }
+
+  @Override
+  public List<StreamEntry> xrange(final String key,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      final RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max,
+      final Integer count, final boolean rev) {
+    Jedis j = getShard(key);
+    return j.xrange(key, min, max, count, rev);
   }
 
   @Override

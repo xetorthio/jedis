@@ -27,6 +27,7 @@ import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.params.ZIncrByParams;
 import redis.clients.jedis.resps.KeyedZSetElement;
 import redis.clients.jedis.util.SafeEncoder;
+import redis.clients.jedis.args.RangeEndpoint;
 
 public class SortedSetCommandsTest extends JedisCommandTestBase {
   final byte[] bfoo = { 0x01, 0x02, 0x03, 0x04 };
@@ -730,6 +731,18 @@ public class SortedSetCommandsTest extends JedisCommandTestBase {
     assertEquals(2, jedis.zcount(bfoo, 0.01d, 2.1d));
 
     assertEquals(3, jedis.zcount(bfoo, SafeEncoder.encode("(0.01"), SafeEncoder.encode("+inf")));
+  }
+
+  @Test
+  public void zcountEndpoint() {
+    jedis.zadd("foo", 1d, "a");
+    jedis.zadd("foo", 2d, "b");
+    jedis.zadd("foo", 5d, "c");
+
+    long result = jedis.zcount("foo", RangeEndpoint.of(0.01d).exclusive(), RangeEndpoint.of(5d));
+    assertEquals(3, result);
+    result = jedis.zcount("foo", RangeEndpoint.of(0.01d).exclusive(), RangeEndpoint.of(5d).exclusive());
+    assertEquals(2, result);
   }
 
   @Test

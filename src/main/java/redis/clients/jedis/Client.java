@@ -11,6 +11,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 
 import redis.clients.jedis.args.ListDirection;
+import redis.clients.jedis.args.RangeEndpoint;
 import redis.clients.jedis.commands.Commands;
 import redis.clients.jedis.params.*;
 import redis.clients.jedis.util.SafeEncoder;
@@ -687,6 +688,11 @@ public class Client extends BinaryClient implements Commands {
   @Override
   public void zcount(final String key, final String min, final String max) {
     zcount(SafeEncoder.encode(key), SafeEncoder.encode(min), SafeEncoder.encode(max));
+  }
+
+  @Override
+  public void zcount(final String key, final RangeEndpoint<Double> min, final RangeEndpoint<Double> max) {
+    zcount(SafeEncoder.encode(key), min.getRaw(), max.getRaw());
   }
 
   @Override
@@ -1478,6 +1484,27 @@ public class Client extends BinaryClient implements Commands {
   public void xrevrange(String key, StreamEntryID end, StreamEntryID start, int count) {
     xrevrange(SafeEncoder.encode(key), SafeEncoder.encode(end == null ? "+" : end.toString()),
       SafeEncoder.encode(start == null ? "-" : start.toString()), count);
+  }
+
+  @Override
+  public void xrange(String key, RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max, Integer count, boolean rev) {
+    final int len = 3 + (count == null ? 0 : 2);
+    byte[][] args = new byte[len][];
+    args[0] = SafeEncoder.encode(key);
+    if (count != null) {
+      args[3] = Protocol.Keyword.COUNT.getRaw();
+      args[4] = Protocol.toByteArray(count);
+    }
+    if (!rev) {
+      args[1] = (min == null ? redis.clients.jedis.args.StreamEntryIdFactory.SMALLEST : min).getRaw();
+      args[2] = (max == null ? redis.clients.jedis.args.StreamEntryIdFactory.LARGEST : max).getRaw();
+      sendCommand(Protocol.Command.XRANGE, args);
+    } else {
+      args[1] = (max == null ? redis.clients.jedis.args.StreamEntryIdFactory.LARGEST : max).getRaw();
+      args[2] = (min == null ? redis.clients.jedis.args.StreamEntryIdFactory.SMALLEST : min).getRaw();
+      sendCommand(Protocol.Command.XREVRANGE, args);
+    }
   }
 
   @Override

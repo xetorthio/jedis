@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import redis.clients.jedis.*;
 import redis.clients.jedis.Protocol.Keyword;
+import redis.clients.jedis.args.RangeEndpoint;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.params.XAddParams;
@@ -213,6 +214,28 @@ public class StreamsCommandsTest extends JedisCommandTestBase {
   }
 
   @Test
+  public void xrange2() {
+    assertEquals(0, jedis.xrange("xrange-stream", null, null, null, false).size());
+
+    Map<String, String> map = java.util.Collections.singletonMap("f1", "v1");
+    StreamEntryID id1 = jedis.xadd("xrange-stream", null, map);
+    StreamEntryID id2 = jedis.xadd("xrange-stream", null, map);
+
+    assertEquals(2, jedis.xrange("xrange-stream", null, null, 3, false).size());
+
+    assertEquals(2, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)), null, 2, false).size());
+    assertEquals(1, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)).exclusive(), null, 2, false).size());
+
+    assertEquals(2, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)), RangeEndpoint.of(RangeEndpoint.convert(id2)), 2, false).size());
+    assertEquals(1, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)).exclusive(), RangeEndpoint.of(RangeEndpoint.convert(id2)), 2, false).size());
+    assertEquals(1, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)), RangeEndpoint.of(RangeEndpoint.convert(id2)).exclusive(), 2, false).size());
+    assertEquals(0, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)).exclusive(), RangeEndpoint.of(RangeEndpoint.convert(id2)).exclusive(), 2, false).size());
+
+    assertEquals(1, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id2)), null, 2, false).size());
+    assertEquals(0, jedis.xrange("xrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id2)).exclusive(), null, 2, false).size());
+  }
+
+  @Test
   public void xread() {
 
     Entry<String, StreamEntryID> streamQeury1 = new AbstractMap.SimpleImmutableEntry<>(
@@ -361,6 +384,32 @@ public class StreamsCommandsTest extends JedisCommandTestBase {
 
     List<StreamEntry> range8 = jedis.xrevrange("xrevrange-stream", null, null);
     assertEquals(3, range8.size());
+  }
+
+  @Test
+  public void xrevrange2() {
+    assertEquals(0, jedis.xrange("xrevrange-stream", null, null, null, true).size());
+
+    Map<String, String> map = java.util.Collections.singletonMap("f1", "v1");
+
+    StreamEntryID id1 = jedis.xadd("xrevrange-stream", null, map);
+    StreamEntryID id2 = jedis.xadd("xrevrange-stream", null, map);
+
+    assertEquals(2, jedis.xrange("xrevrange-stream", null, null, 3, true).size());
+
+    assertEquals(2, jedis.xrange("xrevrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)), null, 2, true).size());
+    assertEquals(1, jedis.xrange("xrevrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)).exclusive(), null, 2, true).size());
+
+    assertEquals(2, jedis.xrange("xrevrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)),
+        RangeEndpoint.of(RangeEndpoint.convert(id2)), 2, true).size());
+    assertEquals(1, jedis.xrange("xrevrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)).exclusive(),
+        RangeEndpoint.of(RangeEndpoint.convert(id2)), 2, true).size());
+    assertEquals(1, jedis.xrange("xrevrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)),
+        RangeEndpoint.of(RangeEndpoint.convert(id2)).exclusive(), 2, true).size());
+    assertEquals(0, jedis.xrange("xrevrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id1)).exclusive(),
+        RangeEndpoint.of(RangeEndpoint.convert(id2)).exclusive(), 2, true).size());
+
+    assertEquals(0, jedis.xrange("xrevrange-stream", RangeEndpoint.of(RangeEndpoint.convert(id2)).exclusive(), null, 4, true).size());
   }
 
   @Test
@@ -591,6 +640,61 @@ public class StreamsCommandsTest extends JedisCommandTestBase {
 
     // with idle
     pendingRange = jedis.xpending("xpendeing-stream", "xpendeing-group",
+      new XPendingParams().idle(Duration.ofMinutes(1).toMillis()).count(3));
+    assertEquals(0, pendingRange.size());
+  }
+
+  @Test
+  public void xpendingWithParams_v2() {
+    Map<String, String> map = new HashMap<>();
+    map.put("f1", "v1");
+    redis.clients.jedis.args.StreamEntryID id1 = jedis.xaddV2("xpending-stream", map, XAddParams.xAddParams());
+
+    assertEquals("OK", jedis.xgroupCreate("xpending-stream", "xpending-group", null, false));
+
+    Entry<String, StreamEntryID> streamQeury1 = new AbstractMap.SimpleImmutableEntry<>(
+            "xpending-stream", StreamEntryID.UNRECEIVED_ENTRY);
+
+    // Read the event from Stream put it on pending
+    List<Entry<String, List<StreamEntry>>> range = jedis.xreadGroup("xpending-group",
+            "xpending-consumer", 1, 1L, false, streamQeury1);
+    assertEquals(1, range.size());
+    assertEquals(1, range.get(0).getValue().size());
+    assertEquals(map, range.get(0).getValue().get(0).getFields());
+
+    // Get the pending event
+    List<StreamPendingEntry> pendingRange = jedis.xpending("xpending-stream", "xpending-group",
+            new XPendingParams().count(3).consumer("xpending-consumer"));
+    assertEquals(1, pendingRange.size());
+    //assertEquals(id1, pendingRange.get(0).getID()); // TODO
+    assertEquals(id1.toString(), pendingRange.get(0).getID().toString());
+    assertEquals(1, pendingRange.get(0).getDeliveredTimes());
+    assertEquals("xpending-consumer", pendingRange.get(0).getConsumerName());
+
+    // Without consumer
+    pendingRange = jedis.xpending("xpending-stream", "xpending-group", new XPendingParams().count(3));
+    assertEquals(1, pendingRange.size());
+    //assertEquals(id1, pendingRange.get(0).getID()); // TODO
+    assertEquals(id1.toString(), pendingRange.get(0).getID().toString());
+    assertEquals(1, pendingRange.get(0).getDeliveredTimes());
+    assertEquals("xpending-consumer", pendingRange.get(0).getConsumerName());
+
+    pendingRange = jedis.xpending("xpending-stream", "xpending-group", new XPendingParams()
+        .count(3).end(RangeEndpoint.of(id1).exclusive()));
+    assertEquals(0, pendingRange.size());
+
+    pendingRange = jedis.xpending("xpending-stream", "xpending-group", new XPendingParams()
+        .count(3).start(RangeEndpoint.of(id1).exclusive()));
+    assertEquals(0, pendingRange.size());
+
+    pendingRange = jedis.xpending("xpending-stream", "xpending-group", new XPendingParams()
+        .count(3).start(RangeEndpoint.of(id1).inclusive()).end(RangeEndpoint.of(id1).inclusive()));
+    assertEquals(1, pendingRange.size());
+    //assertEquals(id1, pendingRange.get(0).getID()); // TODO
+    assertEquals(id1.toString(), pendingRange.get(0).getID().toString());
+
+    // with idle
+    pendingRange = jedis.xpending("xpending-stream", "xpending-group",
       new XPendingParams().idle(Duration.ofMinutes(1).toMillis()).count(3));
     assertEquals(0, pendingRange.size());
   }

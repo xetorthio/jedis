@@ -9,6 +9,7 @@ import redis.clients.jedis.ListPosition;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.SortingParams;
 import redis.clients.jedis.args.ListDirection;
+import redis.clients.jedis.args.RangeEndpoint;
 import redis.clients.jedis.args.UnblockType;
 import redis.clients.jedis.ZParams;
 import redis.clients.jedis.params.GetExParams;
@@ -311,6 +312,8 @@ public interface Commands {
 
   void zcount(String key, String min, String max);
 
+  void zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max);
+
   void zrangeByScore(String key, double min, double max);
 
   void zrangeByScore(String key, String min, String max);
@@ -514,6 +517,9 @@ public interface Commands {
   void xrevrange(String key, StreamEntryID end, StreamEntryID start);
 
   void xrevrange(String key, StreamEntryID end, StreamEntryID start, int count);
+
+  void xrange(String key, RangeEndpoint<redis.clients.jedis.args.StreamEntryID> min,
+      RangeEndpoint<redis.clients.jedis.args.StreamEntryID> max, Integer count, boolean rev);
 
   /**
    * @deprecated This method will be removed due to bug regarding {@code block} param. Use
