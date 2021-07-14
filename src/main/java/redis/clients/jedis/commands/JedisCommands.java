@@ -34,6 +34,7 @@ import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.params.ZIncrByParams;
 import redis.clients.jedis.params.LPosParams;
 import redis.clients.jedis.resps.KeyedListElement;
+import redis.clients.jedis.args.RangeEndpoint;
 
 /**
  * Common interface for sharded and non-sharded Jedis
@@ -290,6 +291,8 @@ public interface JedisCommands {
   long zcount(String key, double min, double max);
 
   long zcount(String key, String min, String max);
+
+  Long zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max);
 
   Set<String> zrangeByScore(String key, double min, double max);
 

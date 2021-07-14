@@ -24,6 +24,7 @@ import redis.clients.jedis.params.ZIncrByParams;
 import redis.clients.jedis.params.LPosParams;
 import redis.clients.jedis.resps.KeyedListElement;
 import redis.clients.jedis.util.Hashing;
+import redis.clients.jedis.args.RangeEndpoint;
 
 public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, Closeable {
 
@@ -734,6 +735,12 @@ public class ShardedJedis extends BinaryShardedJedis implements JedisCommands, C
 
   @Override
   public long zcount(final String key, final String min, final String max) {
+    Jedis j = getShard(key);
+    return j.zcount(key, min, max);
+  }
+
+  @Override
+  public Long zcount(String key, RangeEndpoint<Double> min, RangeEndpoint<Double> max) {
     Jedis j = getShard(key);
     return j.zcount(key, min, max);
   }
