@@ -12,8 +12,10 @@ import java.util.Set;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
+import redis.clients.jedis.args.ListDirection;
+import redis.clients.jedis.args.RangeEndpoint;
+import redis.clients.jedis.args.UnblockType;
 
-import redis.clients.jedis.args.*;
 import redis.clients.jedis.commands.*;
 import redis.clients.jedis.params.*;
 import redis.clients.jedis.resps.*;
@@ -4283,6 +4285,13 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
     checkIsInMultiOrPipeline();
     client.xadd(key, hash, params);
     return BuilderFactory.STREAM_ENTRY_ID.build(client.getBinaryBulkReply());
+  }
+
+  @Override
+  public redis.clients.jedis.args.StreamEntryID xaddV2(final String key, final Map<String, String> hash, final XAddParams params) {
+    checkIsInMultiOrPipeline();
+    client.xadd(key, hash, params);
+    return BuilderFactory.STREAM_ENTRY_ID_V2.build(client.getBinaryBulkReply());
   }
 
   @Override

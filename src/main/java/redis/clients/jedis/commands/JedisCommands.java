@@ -488,6 +488,7 @@ public interface JedisCommands {
    * @return
    */
   StreamEntryID xadd(String key, Map<String, String> hash, XAddParams params);
+  redis.clients.jedis.args.StreamEntryID xaddV2(String key, Map<String, String> hash, XAddParams params);
 
   /**
    * XLEN key
