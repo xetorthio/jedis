@@ -31,6 +31,7 @@ import redis.clients.jedis.args.FlushMode;
 import redis.clients.jedis.args.SaveMode;
 import redis.clients.jedis.args.UnblockType;
 import redis.clients.jedis.params.*;
+import redis.clients.jedis.params.StrAlgoParams.StrAlgo;
 import redis.clients.jedis.util.SafeEncoder;
 
 public class BinaryClient extends Connection {
@@ -1092,6 +1093,10 @@ public class BinaryClient extends Connection {
 
   public void strlen(final byte[] key) {
     sendCommand(STRLEN, key);
+  }
+
+  public void strAlgoLcs(StrAlgo algorithm, StrAlgoParams params) {
+    sendCommand(STRALGO, params.getByteParams(algorithm.getRaw()));
   }
 
   public void lpushx(final byte[] key, final byte[]... string) {

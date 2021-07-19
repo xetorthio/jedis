@@ -7,12 +7,14 @@ import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.SortingParams;
 import redis.clients.jedis.Tuple;
+import redis.clients.jedis.StringMatchResult;
 import redis.clients.jedis.ZParams;
 import redis.clients.jedis.args.*;
 import redis.clients.jedis.params.GeoRadiusParam;
 import redis.clients.jedis.params.GeoRadiusStoreParam;
 import redis.clients.jedis.params.XReadGroupParams;
 import redis.clients.jedis.params.XReadParams;
+import redis.clients.jedis.params.StrAlgoParams;
 
 import java.util.List;
 import java.util.Map;
@@ -158,4 +160,6 @@ public interface MultiKeyBinaryCommands {
 
   long georadiusByMemberStore(byte[] key, byte[] member, double radius, GeoUnit unit,
       GeoRadiusParam param, GeoRadiusStoreParam storeParam);
+
+  StringMatchResult strAlgoLcs(StrAlgoParams.StrAlgo algorithm, StrAlgoParams params);
 }

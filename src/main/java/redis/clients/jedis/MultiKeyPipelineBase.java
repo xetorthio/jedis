@@ -3,6 +3,7 @@ package redis.clients.jedis;
 import redis.clients.jedis.args.*;
 import redis.clients.jedis.commands.*;
 import redis.clients.jedis.params.*;
+import redis.clients.jedis.params.StrAlgoParams.StrAlgo;
 import redis.clients.jedis.resps.*;
 
 import java.util.List;
@@ -1006,5 +1007,11 @@ public abstract class MultiKeyPipelineBase extends PipelineBase implements
       final Map<String, StreamEntryID> streams) {
     client.xreadGroup(groupname, consumer, xReadGroupParams, streams);
     return getResponse(BuilderFactory.STREAM_READ_RESPONSE);
+  }
+
+  @Override
+  public Response<StringMatchResult> strAlgoLcs(StrAlgo algorithm, StrAlgoParams params) {
+    client.strAlgoLcs(algorithm, params);
+    return getResponse(BuilderFactory.STR_ALGO_LCS_RESULT_BUILDER);
   }
 }
