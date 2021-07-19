@@ -132,10 +132,16 @@ public interface BasicCommands {
   long lastsave();
 
   /**
+   * <b>Return type will be void in next major release. A {@code JedisException} will be thrown.</b>
+   * <p>
    * Stop all the client. Perform a SAVE (if one save point is configured). Flush the append only
    * file if AOF is enabled quit the server
-   * @return only in case of error.
+   * @return only in case of error. The return type will be void in next major release. Try not to
+   * be dependent on the return.
+   * @deprecated The return type will be void in next major release. A {@code JedisException} will
+   * be thrown instead. Try not to be dependent on the return.
    */
+  @Deprecated
   String shutdown();
 
   /**

@@ -3435,6 +3435,8 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
   }
 
   /**
+   * <b>Return type will be void in next major release. A {@code JedisException} will be thrown.</b>
+   * <p>
    * Synchronously save the DB on disk, then shutdown the server.
    * <p>
    * Stop all the clients, save the DB, then quit the server. This commands makes sure that the DB
@@ -3442,9 +3444,13 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
    * {@link #save() SAVE} and then {@link #quit() QUIT} because other clients may alter the DB data
    * between the two commands.
    * @return Status code reply on error. On success nothing is returned since the server quits and
-   *         the connection is closed.
+   *         the connection is closed. The return type will be void in next major release. Try not
+   *         to be dependent on the return.
+   * @deprecated The return type will be void in next major release. A {@code JedisException} will
+   *             be thrown instead. Try not to be dependent on the return.
    */
   @Override
+  @Deprecated
   public String shutdown() {
     client.shutdown();
     String status;
